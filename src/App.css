@@ -1,0 +1,97 @@
+.App {
+  text-align: left;
+  padding: 20px;
+  background-color: white;
+  color: black;
+}
+
+.App-off {
+  text-align: left;
+  padding: 20px;
+  color: white;
+  background-color: #181919;
+}
+
+.App-loading {
+  text-align: left;
+  padding: 20px;
+  background-color: gray;
+  color: black;
+}
+
+.Inner-app {
+  font-family: monospace;
+  max-width: 400px;
+}
+
+html {
+  background-color: #181919;
+}
+
+.App-logo {
+  animation: App-logo-spin infinite 20s linear;
+  height: 80px;
+}
+
+.App-header {
+  background-color: #222;
+  height: 150px;
+  padding: 20px;
+  color: white;
+}
+
+.App-intro {
+  font-size: large;
+}
+
+@keyframes App-logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.Status-div {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+
+.Status-span {
+  font-size: 3.5em;
+  font-weight: bold;
+}
+
+.FAQ-div {
+  padding-bottom: 20px;
+}
+
+.Flick-div {
+  padding-bottom: 40px;
+}
+
+button {
+  border-color: black;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 2px;
+  height: 35px;
+  font-family: monospace;
+  margin-top: 10px;
+  width: 252px;
+  font-size: 16px;
+}
+
+input {
+  padding-left: 10px;
+  border-color: black;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 2px;
+  height: 30px;
+  font-family: monospace;
+  width: 240px;
+}
+
+.error {
+  color: red;
+  font-weight: bold;
+}
