@@ -95,3 +95,10 @@ input {
   color: red;
   font-weight: bold;
 }
+
+.thanks {
+  align-items:flex-start;
+  display: flex;
+  padding-top: 20px;
+  flex-direction: column;
+}

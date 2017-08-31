@@ -3,6 +3,7 @@ import './App.css';
 import {Connect} from 'uport-connect'
 import Light from './contracts/Light.json'
 import Web3_Infura from 'web3'
+import Loader from 'halogen/PulseLoader'
 const appName = 'EthereumDeskLight'
 const connect = new Connect(appName, {network: 'rinkeby'})
 const web3 = connect.getWeb3()
@@ -18,30 +19,27 @@ class App extends Component {
       message: '...',
       block: '...',
       inputMessage: '',
-      error: ''
+      error: '',
+      thanks: ''
     };
   }
 
   componentDidMount() {
 
-    console.log(web3)
-
     const StatusContract = web3.eth.contract(Light.abi);
     const statusInstance = StatusContract.at(Light.networks["4"].address)
-    console.log(statusInstance)
 
-    this.setState({
-      statusInstance: statusInstance
-    })
-
-    web3_infura.eth.getPastLogs({address: Light.networks["4"].address, fromBlock: web3._extend.utils.toHex(807850), toBlock: "latest"}).then(this.trySomething.bind(this));
+    this.setState({statusInstance: statusInstance})
+    this.getLogs()
+    setInterval(this.getLogs.bind(this), 10000)
 
   }
 
+  getLogs () {
+    web3_infura.eth.getPastLogs({address: Light.networks["4"].address, fromBlock: web3._extend.utils.toHex(807850), toBlock: "latest"}).then(this.trySomething.bind(this));
+  }
+
   trySomething(e) {
-    console.log(e, e.length)
-    console.log(e[e.length - 1])
-    console.log(web3._extend.utils.toAscii(e[e.length - 1].data.substring(2).match(/.{1,64}/g)[5]))
     var splitstring = e[e.length - 1].data.substring(2).match(/.{1,64}/g);
     this.setState({
       pastTransactions: e,
@@ -49,19 +47,19 @@ class App extends Component {
         ? true
         : false,
       message: web3._extend.utils.toAscii(e[e.length - 1].data.substring(2).match(/.{1,64}/g)[5]),
-      blockNumber: e[e.length - 1].blockNumber
+      blockNumber: e[e.length - 1].blockNumber,
+      thanks: (e.length > this.state.pastTransactions.length) ? '' : this.state.thanks
     })
   }
 
   someFunction() {
-    console.log(web3_infura.eth)
     web3_infura.eth.filter({fromBlock: 0, toBlock: 'latest', address: Light.networks["4"].address}).watch((error, result) => {
-      console.log(result)
+      // console.log(result)
     })
   }
 
   lightStatus() {
-    console.log('hey', this.state.status)
+
     if (this.state.status === 'loading') {
       return (
         <div className="Status-div">
@@ -95,6 +93,9 @@ class App extends Component {
             <b>Last Message</b>
           </p>
           <p>{this.state.message}</p>
+          <p>
+            <b>Block</b>
+          </p>
           <p>{this.state.blockNumber}</p>
         </div>
       )
@@ -129,7 +130,6 @@ class App extends Component {
   }
 
   renderPastTransaction() {
-    console.log('hey', this.state.pastTransactions.length)
     if (this.state.pastTransactions.length > 0) {
       return this.state.pastTransactions.slice(0).reverse().map(this.renderTransaction)
     } else {
@@ -138,95 +138,105 @@ class App extends Component {
   }
 
   isASCII(str) {
-     return /^[\x00-\x7F]*$/.test(str);
+    return /^[\x00-\x7F]*$/.test(str);
   }
 
   handleMessage(e) {
     if (this.isASCII(e.target.value) && e.target.value.length < 33) {
-      this.setState({
-        inputMessage: e.target.value,
-        error: ''
-      })
+      this.setState({inputMessage: e.target.value, error: ''})
     } else {
-      console.log('32')
-      this.setState({
-        error: 'Keep it under 33 ASCII characters.'
-      })
+      this.setState({error: 'Keep it under 33 ASCII characters.'})
     }
   }
 
-  renderError () {
+  renderError() {
     if (this.state.error !== '') {
-      return <p className="error"><b>{this.state.error}</b></p>
+      return <p className="error">
+        <b>{this.state.error}</b>
+      </p>
     } else {
       return <p>Enter a message to change the light's status.</p>
     }
   }
 
-  clickButton () {
-    console.log('click')
+  clickButton() {
     if (this.state.inputMessage.length < 1) {
-      this.setState({
-        error: 'I need a message!'
-      })
+      this.setState({error: 'I need a message!'})
     } else {
       var gas;
       this.state.statusInstance.flick.estimateGas(this.state.inputMessage, (error, result) => {
         gas = result;
       })
-      this.state.statusInstance.flick.sendTransaction(this.state.inputMessage, {gas: gas*2} ,(error, txHash) => {
-        this.setState({
-          thanks: 'Thanks! It will take a moment to update.',
-          error: '',
-          inputMessage: ''
-        })
+      this.state.statusInstance.flick.sendTransaction(this.state.inputMessage, {
+        gas: gas*2
+      }, (error, txHash) => {
+        this.setState({thanks: 'Thanks! It will take a moment to update.', error: '', inputMessage: ''})
       })
     }
   }
 
+  renderThankYou() {
+    if (this.state.thanks !== '') {
+      return (
+        <div className="thanks">
+          <Loader color="gray" size="16px" margin="4px"/>
+          <p>{this.state.thanks}</p>
+        </div>
+      )
+    }
+  }
+
   render() {
-    console.log(this.state.inputMessage)
     return (
       <div className={this.renderAppCSS()}>
-      <div className="Inner-app">
-        <h1>Ethereum Desk Light</h1>
-        {this.lightStatus()}
-        <div className="Flick-div">
-          <h3>
-            <b>Flick Light</b>
-          </h3>
-          {this.renderError()}
-          <input value={this.state.inputMessage} onChange={this.handleMessage.bind(this)} placeholder="Your message" style={{
-            fontSize: "16px"
-          }}/>
-          <br/>
-          <button onClick={this.clickButton.bind(this)} type="button">{(this.state.status) ? "TURN OFF" : "TURN ON"}</button>
+        <div className="Inner-app">
+          <h1>Ethereum Desk Light</h1>
+          {this.lightStatus()}
+          <div className="Flick-div">
+            <h3>
+              <b>Flick Light</b>
+            </h3>
+            {this.renderError()}
+            <input value={this.state.inputMessage} onChange={this.handleMessage.bind(this)} placeholder="Your message" style={{
+              fontSize: "16px"
+            }}/>
+            <br/>
+            <button onClick={this.clickButton.bind(this)} type="button">{(this.state.status)
+                ? "TURN OFF"
+                : "TURN ON"}</button>
+            {this.renderThankYou()}
+          </div>
+          <div className="FAQ-div">
+            <h3>
+              <b>FAQ</b>
+            </h3>
+            <p>
+              <b>Is this light real?</b>
+            </p>
+            <p>Yes, this light lives on my desk and is controlled via a Raspberry Pi and a relay.</p>
+            <br/>
+            <p>
+              <b>How is this connected?</b>
+            </p>
+            <p>This light is connected to via the Ethereum Rinkeby testnet. It uses a smart contract to dictate its current state.</p>
+            <br/>
+            <p>
+              <b>What is the future of the light?</b>
+            </p>
+            <p>This light wants to live on the Ethereum mainnet and would like to give away a coin for everyone who interacts with it, but will live here until Metropolis.</p>
+            <br/>
+            <p>
+              <b>Does this work with Metamask or Mist?</b>
+            </p>
+            <p>No. At the moment you must use <a href="https://www.uport.me/signup">Uport's Alpha app</a>. I will migrate this to regular web3 shortly.</p>
+          </div>
+          <div>
+            <h3>
+              <b>Past Transactions</b>
+            </h3>
+            {this.renderPastTransaction()}
+          </div>
         </div>
-        <div className="FAQ-div">
-          <h3>
-            <b>FAQ</b>
-          </h3>
-          <br/>
-          <p>
-            <b>Is this light real?</b>
-          </p>
-          <p>Yes, this light lives on my desk and is controlled via a Raspberry Pi and a relay.</p>
-          <p>
-            <b>How is this connected?</b>
-          </p>
-          <p>This light is connected to via the Ethereum Rinkeby testnet. It uses a smart contract to dictate its current state.</p>
-          <p>
-            <b>What is the future of the light?</b>
-          </p>
-          <p>This light wants to live on the Ethereum mainnet and would like to give away a coin for everyone who interacts with it, but will live here until Metropolis.</p>
-        </div>
-        <div>
-          <h3>
-            <b>Past Transactions</b>
-          </h3>
-          {this.renderPastTransaction()}
-        </div>
-      </div>
       </div>
     );
   }
